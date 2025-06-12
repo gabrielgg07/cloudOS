@@ -1,21 +1,23 @@
 # === Variables ===
 ASM        := nasm
 ASMFLAGS   := -f elf32
+CC         := gcc
+LD         := ld -m elf_i386
+
+CFLAGS     := -ffreestanding -m32 -O2 -Wall -Wextra -Iinclude
+LDFLAGS    := -T boot/linker.ld -nostdlib
+
 BOOT_SRC   := boot/boot.s
 BOOT_OBJ   := build/boot.o
 
 TARGET     := kernel.bin
 ISO        := build/os.iso
 GRUB_CFG   := boot/grub.cfg
-LINKER     := boot/linker.ld
-C_SOURCES  := $(wildcard kernel/*.c) $(wildcard kernel/drivers/*.c) $(wildcard kernel/include/*.c)
-OBJ_FILES := $(patsubst %.c, %.o, $(C_SOURCES))
 
-
-CC         := gcc
-LD         := ld -m elf_i386
-CFLAGS     := -ffreestanding -m32 -O2 -Wall -Wextra
-LDFLAGS    := -T $(LINKER) -nostdlib
+# === Source Files ===
+C_SRC_DIRS := kernel kernel/drivers kernel/include
+C_SOURCES  := $(foreach dir,$(C_SRC_DIRS),$(wildcard $(dir)/*.c))
+OBJ_FILES  := $(patsubst %.c, build/%.o, $(notdir $(C_SOURCES)))
 
 # === Default Build ===
 all: $(ISO)
@@ -24,17 +26,16 @@ all: $(ISO)
 build/$(TARGET): $(BOOT_OBJ) $(OBJ_FILES)
 	$(LD) $(LDFLAGS) -o $@ $^
 
-
 # === Compile C source files ===
-build/%.o: kernel/%.c
+# Search each directory for the matching file name
+build/%.o:
 	mkdir -p build
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $(firstword $(wildcard $(addsuffix /$*.c,$(C_SRC_DIRS)))) -o $@
 
 # === Compile assembly file === 
 $(BOOT_OBJ): $(BOOT_SRC)
 	mkdir -p build
 	$(ASM) $(ASMFLAGS) $< -o $@
-
 
 # === ISO Image with GRUB ===
 $(ISO): build/$(TARGET) $(GRUB_CFG)
@@ -46,8 +47,6 @@ $(ISO): build/$(TARGET) $(GRUB_CFG)
 # === Run in QEMU ===
 run: $(ISO)
 	qemu-system-x86_64 -cdrom $(ISO)
-
-
 
 # === Clean Build ===
 clean:
