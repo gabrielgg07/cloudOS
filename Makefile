@@ -1,6 +1,6 @@
 # === Variables ===
 ASM        := nasm
-ASMFLAGS   := -f elf64
+ASMFLAGS   := -f elf32
 BOOT_SRC   := boot/boot.s
 BOOT_OBJ   := build/boot.o
 
@@ -12,8 +12,8 @@ C_SOURCES  := $(wildcard kernel/*.c)
 OBJ_FILES  := $(patsubst kernel/%.c, build/%.o, $(C_SOURCES))
 
 CC         := gcc
-LD         := ld
-CFLAGS     := -ffreestanding -m64 -O2 -Wall -Wextra
+LD         := ld -m elf_i386
+CFLAGS     := -ffreestanding -m32 -O2 -Wall -Wextra
 LDFLAGS    := -T $(LINKER) -nostdlib
 
 # === Default Build ===
@@ -43,8 +43,9 @@ $(ISO): build/$(TARGET) $(GRUB_CFG)
 	grub-mkrescue -o $(ISO) build/iso
 
 # === Run in QEMU ===
-run: build/$(TARGET)
-	qemu-system-x86_64 -kernel build/$(TARGET) -nographic -serial mon:stdio
+run: $(ISO)
+	qemu-system-x86_64 -cdrom $(ISO)
+
 
 
 # === Clean Build ===

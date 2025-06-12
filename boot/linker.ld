@@ -4,6 +4,11 @@ SECTIONS
 {
   . = 1M;
 
+  .multiboot :
+  {
+    *(.multiboot)
+  }
+
   .text :
   {
     *(.text*)
