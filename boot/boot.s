@@ -8,9 +8,11 @@ multiboot_header:
 section .text
 global _start
 extern kernel_main
+extern stack_top
 
 _start:
-
+    ; Example in assembly (boot.s or similar)
+    mov esp, stack_top
     ; Setup VGA pointer
     mov eax, msg         ; 32-bit load into eax
     mov esi, eax         ; source index (msg)

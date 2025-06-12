@@ -8,8 +8,9 @@ TARGET     := kernel.bin
 ISO        := build/os.iso
 GRUB_CFG   := boot/grub.cfg
 LINKER     := boot/linker.ld
-C_SOURCES  := $(wildcard kernel/*.c)
-OBJ_FILES  := $(patsubst kernel/%.c, build/%.o, $(C_SOURCES))
+C_SOURCES  := $(wildcard kernel/*.c) $(wildcard kernel/drivers/*.c) $(wildcard kernel/include/*.c)
+OBJ_FILES := $(patsubst %.c, %.o, $(C_SOURCES))
+
 
 CC         := gcc
 LD         := ld -m elf_i386

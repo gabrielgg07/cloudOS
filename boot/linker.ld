@@ -26,6 +26,8 @@ SECTIONS
 
   .bss :
   {
-    *(.bss*)
+    stack_bottom = .;
+    . = . + 0x4000;  /* 16 KB stack */
+    stack_top = .;
   }
 }
