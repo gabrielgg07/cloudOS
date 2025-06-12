@@ -15,9 +15,11 @@ ISO        := build/os.iso
 GRUB_CFG   := boot/grub.cfg
 
 # === Source Files ===
-C_SRC_DIRS := kernel kernel/drivers kernel/include
+C_SRC_DIRS := kernel kernel/drivers kernel/include kernel/arch/x86
 C_SOURCES  := $(foreach dir,$(C_SRC_DIRS),$(wildcard $(dir)/*.c))
-OBJ_FILES  := $(patsubst %.c, build/%.o, $(notdir $(C_SOURCES)))
+ASM_SOURCES := $(wildcard $(foreach dir,$(C_SRC_DIRS),$(dir)/*.s))
+OBJ_FILES  := $(patsubst %.c, build/%.o, $(notdir $(C_SOURCES))) \
+              $(patsubst %.s, build/%.o, $(notdir $(ASM_SOURCES)))
 
 # === Default Build ===
 all: $(ISO)
@@ -30,7 +32,13 @@ build/$(TARGET): $(BOOT_OBJ) $(OBJ_FILES)
 # Search each directory for the matching file name
 build/%.o:
 	mkdir -p build
-	$(CC) $(CFLAGS) -c $(firstword $(wildcard $(addsuffix /$*.c,$(C_SRC_DIRS)))) -o $@
+	@src_c=$(firstword $(wildcard $(addsuffix /$*.c,$(C_SRC_DIRS)))) && \
+	if [ -n "$$src_c" ]; then \
+		$(CC) $(CFLAGS) -c $$src_c -o $@ ; \
+	else \
+		src_s=$(firstword $(wildcard $(addsuffix /$*.s,$(C_SRC_DIRS)))) && \
+		$(ASM) $(ASMFLAGS) $$src_s -o $@ ; \
+	fi
 
 # === Compile assembly file === 
 $(BOOT_OBJ): $(BOOT_SRC)
