@@ -1,6 +1,9 @@
 #include "../../include/terminal.h"
 #include "../../include/port.h"
+#include "../../include/keyboard.h"
 
+
+static int skip_next = 0;
 
 static const char* scancode_to_string[128] = {
     [0x00] = "?",
@@ -77,10 +80,23 @@ void irq_handler(int int_num, int err_code) {
 
     // Handle scancode (convert to character or store raw scancode)
     if (!(scancode & 0x80) && int_num == 0x21) {  // Key down event (ignore key up)
-        const char *character = scancode_to_string[scancode];
-        if (character) {
-            //keyboard_buffer_enqueue(character);  // Store character in a buffer
-            terminal_print(character);
+        if (scancode == 0xE0) {
+            skip_next = 1; // Skip the next byte (extended scancode)
+            return;
+        }
+
+        if (skip_next) {
+            skip_next = 0;
+            return;
+        }
+
+        if (scancode & 0x80) return; // Ignore key release
+
+        if (scancode < 128) {
+            const char *character = scancode_to_string[scancode];
+            if (character && character[0] >= 32 && character[0] <= 126) {
+                keyboard_buffer_enqueue(character[0]);
+            }
         }
     }
 }
