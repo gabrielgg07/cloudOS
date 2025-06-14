@@ -54,7 +54,14 @@ $(ISO): build/$(TARGET) $(GRUB_CFG)
 
 # === Run in QEMU ===
 run: $(ISO)
-	qemu-system-x86_64 -cdrom $(ISO)
+	qemu-system-i386 -cdrom build/os.iso -d int -no-reboot -no-shutdown
+
+
+
+
+
+
+
 
 # === Clean Build ===
 clean:
