@@ -19,7 +19,7 @@ struct gdt_ptr {
 
 
 // GDT with 3 entries: null, code, data
-static struct gdt_entry gdt[3];
+static struct gdt_entry gdt[5];
 static struct gdt_ptr gdtp;
 
 extern void gdt_flush(uint32_t);
@@ -50,5 +50,11 @@ void gdt_init(void) {
     // Kernel data segment: base=0, limit=4GB, access=0x92, gran=0xCF
     gdt_set_entry(2, 0, 0xFFFFFFFF, 0x92, 0xCF);
 
+        // User code segment: base=0, limit=4GB, access=0xFA, gran=0xCF
+    gdt_set_entry(3, 0, 0xFFFFFFFF, 0xFA, 0xCF);
+
+    // User data segment: base=0, limit=4GB, access=0xF2, gran=0xCF
+    gdt_set_entry(4, 0, 0xFFFFFFFF, 0xF2, 0xCF);
+    
     gdt_flush((uint32_t)&gdtp);
 }

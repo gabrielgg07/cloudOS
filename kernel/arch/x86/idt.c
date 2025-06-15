@@ -2,6 +2,7 @@
 #include "../../include/terminal.h"
 #include "../../include/port.h"
 #include "../../include/pic.h"
+#include "../../include/keyboard.h"
 
 extern void isr_stub_0();
 extern void isr_stub_1();
@@ -98,6 +99,18 @@ void init_keyboard() {
 
 }
 
+void isr80_handler() {
+    terminal_print("Syscall print!\n");
+    // Get syscall number from eax
+    uint32_t syscall_id;
+    asm volatile ("mov %%eax, %0" : "=r"(syscall_id));
+
+    if (syscall_id == 1) {
+        terminal_print("Syscall print!\n");
+    }
+    outb(0x20, 0x20);  // EOI
+}
+
 
 void idt_init() {
     idtp.limit = sizeof(idt) - 1;
@@ -155,8 +168,12 @@ void idt_init() {
     set_idt_gate(45, (uint32_t)irq_stub_13);
     set_idt_gate(46, (uint32_t)irq_stub_14);
     set_idt_gate(47, (uint32_t)irq_stub_15);
+
+
+    //default syscall handler
+    set_idt_gate(0x80, (uint32_t)isr80_handler);  // syscall handler
     outb(0x21, 0xFD); // Master PIC: Unmask IRQ1 (bit 1) and IRQ2 (bit 2, needed for Slave PIC)
-    //outb(0xA1, 0xEF); // Slave PIC: Unmask IRQ12 (bit 4)
+    outb(0xA1, 0xEF); // Slave PIC: Unmask IRQ12 (bit 4)
     // Load the IDT into the CPU
     
     idt_load((uint32_t)&idtp);

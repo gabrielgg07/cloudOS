@@ -2,8 +2,7 @@
 #include "../../include/port.h"
 #include "../../include/keyboard.h"
 
-
-static int skip_next = 0;
+//int shift_pressed = 0;
 
 static const char* scancode_to_string[128] = {
     [0x00] = "?",
@@ -72,31 +71,23 @@ static const char* scancode_to_string[128] = {
     // ...
     // Fill in the rest as needed, up to 0x7F
 };
+
+
 void irq_handler(int int_num, int err_code) {
     uint8_t scancode = inb(0x60);
 
     // Send End of Interrupt (EOI) to PIC
     outb(0x20, 0x20);
+    if (int_num == 33){
+        keyboard_interrupt_handler();
+        return;
+    }
 
     // Handle scancode (convert to character or store raw scancode)
-    if (!(scancode & 0x80) && int_num == 0x21) {  // Key down event (ignore key up)
-        if (scancode == 0xE0) {
-            skip_next = 1; // Skip the next byte (extended scancode)
-            return;
-        }
-
-        if (skip_next) {
-            skip_next = 0;
-            return;
-        }
-
-        if (scancode & 0x80) return; // Ignore key release
-
-        if (scancode < 128) {
-            const char *character = scancode_to_string[scancode];
-            if (character && character[0] >= 32 && character[0] <= 126) {
-                keyboard_buffer_enqueue(character[0]);
-            }
+    if (!(scancode & 0x80) && int_num == 33) {  // Key down event (ignore key up)
+        const char *character = scancode_to_string[scancode];
+        if (character) {
+            keyboard_buffer_enqueue(character);  // Store character in a buffer
         }
     }
 }

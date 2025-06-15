@@ -5,10 +5,12 @@
   global irq_stub_%1
 irq_stub_%1:
   cli
-  push byte 0
-  push dword (32 + %1)
+  pusha                   ; <-- Save all general-purpose registers
+  push byte 0             ; Push fake error code
+  push dword (32 + %1)    ; Push interrupt number
   call irq_handler
-  add esp, 8
+  add esp, 8              ; Clean up stack from pushed arguments
+  popa                    ; <-- Restore registers
   sti
   iret
 %endmacro

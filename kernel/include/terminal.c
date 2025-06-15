@@ -1,7 +1,9 @@
-#include "terminal.h"
+#include "./terminal.h"
 #include <stddef.h>
 #include "../drivers/vga.h"
-
+// Or however you get your cursor position
+#define VGA_WIDTH 80
+#define VGA_HEIGHT 25
 // terminal.c
 int terminal_row = 0;
 int terminal_column = 0;
@@ -73,6 +75,28 @@ void terminal_clear() {
     terminal_row = 0;
     terminal_column = 0;
     vga_clear_screen();
+}
+
+
+void terminal_set_cursor(int row, int col) {
+    terminal_column = col;
+    terminal_row = row;
+}
+
+void terminal_backspace() {
+    if (terminal_column == 0 && terminal_row == 0) return; // Top-left, can't backspace
+
+    if (terminal_column == 0) {
+        terminal_row--;
+        terminal_column = VGA_WIDTH - 1;
+    } else {
+        terminal_column--;
+    }
+
+    // Clear character at current location
+    vga_put_char_at(' ', terminal_column, terminal_row, 0x07);
+    // Move cursor to updated position
+    terminal_set_cursor(terminal_row, terminal_column);
 }
 
 
