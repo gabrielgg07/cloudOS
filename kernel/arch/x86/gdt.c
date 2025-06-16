@@ -1,5 +1,6 @@
 #include "../../include/gdt.h"
 
+extern void tss_flush(void);
 // GDT entry structure
 struct gdt_entry {
     uint16_t limit_low;
@@ -19,8 +20,19 @@ struct gdt_ptr {
 
 
 // GDT with 3 entries: null, code, data
-static struct gdt_entry gdt[5];
+static struct gdt_entry gdt[6];
 static struct gdt_ptr gdtp;
+
+
+//tss stuff
+struct tss_entry {
+    uint32_t prev_tss;
+    uint32_t esp0;
+    uint32_t ss0;
+    uint32_t unused[23]; // Fill to 104 bytes (sizeof TSS)
+} __attribute__((packed));
+
+struct tss_entry tss;
 
 extern void gdt_flush(uint32_t);
 
@@ -35,6 +47,15 @@ static void gdt_set_entry(int i, uint32_t base, uint32_t limit, uint8_t access, 
 
     gdt[i].granularity |= gran & 0xF0;
     gdt[i].access = access;
+}
+
+void tss_set(uint32_t kernel_stack) {
+    uint32_t base = (uint32_t)&tss;
+    uint32_t limit = base + sizeof(tss);
+
+    gdt_set_entry(5, base, limit, 0x89, 0x40); // type 0x89 = 32-bit TSS (available)
+    tss.esp0 = kernel_stack;
+    tss.ss0  = 0x10; // Kernel data segment selector
 }
 
 void gdt_init(void) {
@@ -55,6 +76,13 @@ void gdt_init(void) {
 
     // User data segment: base=0, limit=4GB, access=0xF2, gran=0xCF
     gdt_set_entry(4, 0, 0xFFFFFFFF, 0xF2, 0xCF);
-    
+    gdt_set_entry(5, (uint32_t)&tss, sizeof(tss), 0x89, 0x00);  // 0x89 = TSS (32-bit)
     gdt_flush((uint32_t)&gdtp);
+
+    tss_set(0x90000); // some free kernel-mode stack
+    tss_flush();      // install TSS into TR register
+    
+
 }
+
+

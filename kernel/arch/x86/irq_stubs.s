@@ -1,5 +1,6 @@
 [bits 32]
 [extern irq_handler]
+[extern isr80_handler]
 
 %macro IRQ_STUB 1
   global irq_stub_%1
@@ -20,3 +21,11 @@ irq_stub_%1:
   IRQ_STUB i
   %assign i i + 1
 %endrep
+
+global isr80_stub
+isr80_stub:
+    push byte 0          ; Fake error code
+    push dword 0x80      ; Interrupt number
+    jmp isr80_handler  ; Forward to your shared C handler
+
+

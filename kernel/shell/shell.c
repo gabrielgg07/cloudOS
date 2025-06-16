@@ -13,6 +13,7 @@ void run_shell() {
     int index = 0; 
     terminal_print("DiamondOS Shell\n");
     terminal_print("> ");
+    //asm volatile ("int $0x80");  // Enable interrupts
     char c;
     while (1) {
         while ((c = keyboard_buffer_dequeue()) == 0);  // Blocking read

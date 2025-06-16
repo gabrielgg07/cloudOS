@@ -29,8 +29,11 @@ void enter_user_mode() {
 
          // === USER MODE STARTS HERE ===
         "1:\n"
-        "nop\n"
-        "jmp .\n"                       // Loop in user mode
+        "mov $1, %%eax\n"
+        "int $0x80\n"
+
+        "2:\n"
+        "jmp 2b\n"
         :
         : [stack] "r" (user_stack)
         : "memory", "eax"
