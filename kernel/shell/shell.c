@@ -3,6 +3,7 @@
 #include "../include/keyboard.h"
 #include "../include/lib/string.h"
 #include "../include/shell.h"
+#include "../include/fat.h"
 #include "commands.h"
 
 
@@ -13,7 +14,6 @@ void run_shell() {
     int index = 0; 
     terminal_print("DiamondOS Shell\n");
     terminal_print("> ");
-    //asm volatile ("int $0x80");  // Enable interrupts
     char c;
     while (1) {
         while ((c = keyboard_buffer_dequeue()) == 0);  // Blocking read
@@ -58,6 +58,12 @@ command_entry_t command_table[] = {
     {"diskinfo", cmd_diskinfo},
     {"diskwrite", cmd_diskwrite},
     {"diskread", cmd_diskread},
+    {"ls", cmd_ls},
+    {"cat", cmd_cat},
+    {"touch", cmd_touch},
+    {"mkdir", cmd_mkdir},  // Alias for touch
+    {"cd", cmd_cd},      // Change directory
+    {"echoD", cmd_echoDirect}, // Echo command
     {NULL, NULL}
 };
 

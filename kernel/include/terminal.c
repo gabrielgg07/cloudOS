@@ -1,5 +1,7 @@
 #include "./terminal.h"
 #include <stddef.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include "../drivers/vga.h"
 // Or however you get your cursor position
 #define VGA_WIDTH 80
@@ -99,5 +101,44 @@ void terminal_backspace() {
     terminal_set_cursor(terminal_row, terminal_column);
 }
 
+void terminal_printf(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+
+    for (size_t i = 0; fmt[i]; i++) {
+        if (fmt[i] == '%' && fmt[i + 1]) {
+            i++;
+            switch (fmt[i]) {
+                case 'd':
+                case 'i':
+                    terminal_print_int(va_arg(args, uint32_t));
+                    break;
+                case 'x':
+                    terminal_print_hex(va_arg(args, uint32_t));
+                    break;
+                case 's':
+                    terminal_print(va_arg(args, const char*));
+                    break;
+                case 'c':
+                    {
+                        char c = (char)va_arg(args, int);
+                        terminal_put_char(c);
+                    }
+                    break;
+                case '%':
+                    terminal_put_char('%');
+                    break;
+                default:
+                    terminal_put_char('%');
+                    terminal_put_char(fmt[i]);
+                    break;
+            }
+        } else {
+            terminal_put_char(fmt[i]);
+        }
+    }
+
+    va_end(args);
+}
 
 

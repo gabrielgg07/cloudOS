@@ -24,6 +24,8 @@ void terminal_print_hex(uint32_t num);
 
 void terminal_clear();
 
+void terminal_printf(const char* fmt, ...);
+
 
 
 

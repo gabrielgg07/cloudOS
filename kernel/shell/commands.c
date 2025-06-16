@@ -4,6 +4,15 @@
 #include "../include/gdt.h"
 #include "../network/nic.h"
 #include "../include/disk.h"
+#include "../include/lib/util.h"
+
+const char* get_args(const char* input) {
+    // Skip the command name
+    while (*input && *input != ' ') input++;  // Skip command
+    while (*input == ' ') input++;            // Skip spaces
+    return input;
+}
+
 void enter_user_mode() {
     const char* msg = "Hello from user mode!\n";
     uint32_t user_stack = 0x800000;
@@ -40,6 +49,7 @@ void enter_user_mode() {
 }
 
 void cmd_help(const char* input) {
+    terminal_print(input);
     terminal_print("Available commands:\n");
     terminal_print("  help   - Show this help message\n");
     terminal_print("  clear  - Clear the screen\n");
@@ -116,21 +126,154 @@ void cmd_diskinfo(const char* input) {
     ata_identify();
 }
 
+uint32_t parse_first_arg(const char* input, const char** out_rest) {
+    // Skip the command name
+    while (*input && *input != ' ') input++;
+    while (*input == ' ') input++;
+
+    // Parse number
+    uint32_t val = strtol(input, (char**)out_rest, 10);
+
+    // Skip whitespace before rest
+    while (**out_rest == ' ') (*out_rest)++;
+
+    return val;
+}
+
+
+
 void cmd_diskwrite(const char* input) {
+    const char* msg = get_args(input);
+    int sector = parse_first_arg(input, &msg); // Skip the command name
+    if (!msg || !*msg) {
+        terminal_print("Error: No message provided for disk write.\n");
+        return;
+    }
     uint8_t buf[512] = {0};
-    const char* msg = "Hello from CloudOS!";
     for (int i = 0; msg[i]; i++) {
         buf[i] = (uint8_t)msg[i];
     }
 
-    ata_write_sector(1, buf);  // Write to LBA 1
+    ata_write_sector(sector, buf);  // Write to specified LBA
     terminal_print("Data written to disk.\n");
 }
 
 void cmd_diskread(const char* input) {
+    const char* msg = get_args(input);
+    int sector = parse_first_arg(input, &msg); // Skip the command name
     uint8_t buf[513] = {0}; // Extra byte for null terminator
-    ata_read_sector(1, buf);
+    ata_read_sector(sector, buf);
     terminal_print("Read from disk:\n  ");
     terminal_print((char*)buf);
     terminal_print("\n");
+}
+
+void cmd_ls(const char* input) {
+    terminal_print("Root Directory:\n");
+    fat16_list_root();
+}
+
+void cmd_cat(const char* input) {
+    const char* filename = get_args(input);
+    fat16_read_file(filename);
+}
+
+void cmd_touch(const char* input) {
+    const char* args = get_args(input);
+
+    char name[9] = {0};  // 8 + null
+    char ext[4] = {0};   // 3 + null
+
+    // Parse "FILENAME.EXT"
+    int i = 0;
+    while (*args && *args != '.' && i < 8) {
+        name[i++] = *args++;
+    }
+    name[i] = '\0';
+
+    if (*args == '.') {
+        args++;  // skip the dot
+        i = 0;
+        while (*args && i < 3) {
+            ext[i++] = *args++;
+        }
+        ext[i] = '\0';
+    }
+
+    // Pad name and ext with spaces for FAT format
+    for (int j = i; j < 8; j++) name[j] = ' ';
+    for (int j = i; j < 3; j++) ext[j] = ' ';
+
+    fat16_create_file(name, ext, "Created from touch\n", 19);
+}
+
+void cmd_mkdir(const char* input) {
+    const char* dirname = get_args(input);
+    fat16_mkdir(dirname);
+}
+
+void cmd_cd(const char* input) {
+    const char* dirname = get_args(input);
+    fat16_cd(dirname);
+}
+
+//helper
+int parse_echo_input(const char* input, char* out_text, char* out_filename) {
+    int i = 0;
+    while (input[i] && input[i] != '>') {
+        out_text[i] = input[i];
+        i++;
+    }
+
+    if (input[i] != '>') return 0;  // invalid format
+
+    out_text[i] = '\0';
+
+    i++; // skip '>'
+
+    // Skip whitespace
+    while (input[i] == ' ') i++;
+
+    int j = 0;
+    while (input[i] && j < 32) {
+        out_filename[j++] = input[i++];
+    }
+    out_filename[j] = '\0';
+
+    return 1;
+}
+
+void cmd_echoDirect(const char* input) {
+    char text[256] = {0};
+    char file[32] = {0};
+    char name[9] = {0};
+    char ext[4] = {0};
+
+    if (!parse_echo_input(get_args(input), text, file)) {
+        terminal_print("Usage: echo <text> > FILENAME.TXT\n");
+        return;
+    }
+
+    // Extract name and extension
+    int i = 0;
+    while (file[i] && file[i] != '.' && i < 8) {
+        name[i] = file[i];
+        i++;
+    }
+    name[i] = '\0';
+
+    if (file[i] == '.') {
+        i++;
+        int j = 0;
+        while (file[i] && j < 3) {
+            ext[j++] = file[i++];
+        }
+        ext[j] = '\0';
+    }
+
+    // Pad name/ext with spaces (FAT format)
+    for (int k = strlen(name); k < 8; k++) name[k] = ' ';
+    for (int k = strlen(ext); k < 3; k++) ext[k] = ' ';
+
+    fat16_create_file(name, ext, text, strlen(text));
 }

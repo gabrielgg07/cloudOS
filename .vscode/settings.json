@@ -1,5 +1,10 @@
 {
     "files.associations": {
-        "vga.h": "c"
+        "vga.h": "c",
+        "cstdint": "c",
+        "util.h": "c",
+        "fat.h": "c",
+        "terminal.h": "c",
+        "disk.h": "c"
     }
 }

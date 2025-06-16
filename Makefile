@@ -15,7 +15,7 @@ ISO        := build/os.iso
 GRUB_CFG   := boot/grub.cfg
 
 # === Source Files ===
-C_SRC_DIRS := kernel kernel/drivers kernel/drivers/keyboard kernel/drivers/disk kernel/include kernel/arch/x86 kernel/lib kernel/include/lib kernel/shell kernel/syscall kernel/network
+C_SRC_DIRS := kernel kernel/drivers kernel/fs kernel/memory kernel/drivers/keyboard kernel/drivers/disk kernel/include kernel/arch/x86 kernel/lib kernel/include/lib kernel/shell kernel/syscall kernel/network
 C_SOURCES  := $(foreach dir,$(C_SRC_DIRS),$(wildcard $(dir)/*.c))
 ASM_SOURCES := $(wildcard $(foreach dir,$(C_SRC_DIRS),$(dir)/*.s))
 OBJ_FILES  := $(patsubst %.c, build/%.o, $(notdir $(C_SOURCES))) \
@@ -54,7 +54,9 @@ $(ISO): build/$(TARGET) $(GRUB_CFG)
 
 # === Run in QEMU ===
 run: $(ISO)
-	qemu-system-i386 -cdrom build/os.iso -d int -no-reboot -no-shutdown -net nic,model=ne2k_pci -net user -hda disk.img
+	qemu-system-i386 -cdrom build/os.iso \
+	-boot d \
+	-d int -no-reboot -no-shutdown -net nic,model=ne2k_pci -net user -hda fat16.img
 
 
 # === Clean Build ===

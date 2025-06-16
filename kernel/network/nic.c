@@ -1,7 +1,34 @@
 #include "nic.h"
-#include "../include/terminal.h"  
+#include "../include/terminal.h" 
+#include "../include/pci.h" 
 
 nic_info_t global_nic_info;  // Define the global variable
+
+void pci_scan_for_ne2k() {
+    for (uint8_t bus = 0; bus < 256; bus++) {
+        for (uint8_t slot = 0; slot < 32; slot++) {
+            uint16_t vendor = pci_config_read_word(bus, slot, 0, 0);
+            if (vendor == 0xFFFF) continue; // No device at this slot
+            uint16_t device = pci_config_read_word(bus, slot, 0, 2);
+            if (vendor == 0x10EC && device == 0x8029) { // Example device ID for NE2000
+                terminal_print("NE2000 NIC Found!\n");
+                // Initialize global NIC info
+                uint32_t bar0 = pci_config_read_word(bus,slot,0,0x10);
+                uint8_t irq = pci_config_read_word(bus,slot, 0, 0x3c) & 0xFF;
+                global_nic_info.io_base = bar0 & ~0x1; //mask off I/O flag
+                global_nic_info.irq = irq;
+                global_nic_info.vendor_id = vendor;
+                global_nic_info.device_id = device;
+                terminal_print("NE2000 I/O base: ");
+                terminal_print_int(global_nic_info.io_base);
+                terminal_print("\nIRQ: ");
+                terminal_print_int(global_nic_info.irq);
+                terminal_print("\n");
+                return; // Found and initialized, exit
+            }
+        }
+    }
+}
 
 
 void nic_init() {
@@ -26,26 +53,5 @@ void print_nic_info() {
     // This function can be called after nic_init() to display the info
     // Example implementation:
     terminal_print("NIC Information:\n");
-    terminal_print("  IO Base: ");
-    terminal_print_int(global_nic_info.io_base);
-    terminal_print("\n");
-
-    terminal_print("  IRQ Line: ");
-    terminal_print_int(global_nic_info.irq);
-    terminal_print("\n");
-
-    terminal_print("  MAC Address: ");
-    for (int i = 0; i < 6; i++) {
-        terminal_print_hex(global_nic_info.mac[i]);
-        if (i < 5) terminal_print(":");
-    }
-    terminal_print("\n");
-
-    terminal_print("  Vendor ID: ");
-    terminal_print_int(global_nic_info.vendor_id);
-    terminal_print("\n");
-
-    terminal_print("  Device ID: ");
-    terminal_print_int(global_nic_info.device_id);
-    terminal_print("\n");
+    pci_scan_for_ne2k(); // Scan for NE2000 NIC
 }

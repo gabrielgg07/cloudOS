@@ -14,5 +14,6 @@ typedef struct {
 
 void nic_init();
 void print_nic_info();
+void pci_scan_for_ne2k();
 
 #endif
