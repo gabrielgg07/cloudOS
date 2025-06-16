@@ -1,9 +1,8 @@
 #include "commands.h"
 #include "../include/terminal.h"
-
-
+#include "../network/nic.h"
 #include "../include/gdt.h"
-
+#include "../network/nic.h"
 void enter_user_mode() {
     const char* msg = "Hello from user mode!\n";
     uint32_t user_stack = 0x800000;
@@ -29,7 +28,6 @@ void enter_user_mode() {
         "int $0x80\n"
 
         "mov $1, %%eax\n"
-        "mov %[msg], %%ebx\n"
         "int $0x80\n"
 
         "2:\n"
@@ -60,3 +58,56 @@ void cmd_echo(const char* input) {
     terminal_print(msg);
     terminal_put_char('\n');
 }
+
+void cmd_sysinfo(const char* input) {
+    terminal_print("System Information:\n");
+    // CPU Vendor string
+    char vendor[13];
+    uint32_t eax, ebx, ecx, edx;
+    __asm__ volatile (
+        "cpuid"
+        : "=b"(ebx), "=d"(edx), "=c"(ecx)
+        : "a"(0)
+    );
+    *(uint32_t*)&vendor[0] = ebx;
+    *(uint32_t*)&vendor[4] = edx;
+    *(uint32_t*)&vendor[8] = ecx;
+    vendor[12] = 0;
+    terminal_print("  CPU Vendor: ");
+    terminal_print("  ");
+    terminal_print(vendor);
+    terminal_print("\n");
+    char brand[49];
+    uint32_t* brand_ptr = (uint32_t*)brand;
+
+    for (uint32_t i = 0; i < 3; ++i) {
+        __asm__ volatile (
+            "cpuid"
+            : "=a"(brand_ptr[i*4 + 0]), "=b"(brand_ptr[i*4 + 1]), "=c"(brand_ptr[i*4 + 2]), "=d"(brand_ptr[i*4 + 3])
+            : "a"(0x80000002 + i)
+        );
+    }
+    brand[48] = 0;
+
+    terminal_print("  CPU Name: ");
+    terminal_print(brand);
+    terminal_print("\n");
+    const char* bios_area = (const char*)0xF0000;
+    for (uintptr_t addr = 0xF0000; addr < 0x100000; addr += 16) {
+        if (*(uint32_t*)addr == 0x5F4D535F) { // "_SM_"
+            terminal_print("  SMBIOS table found at 0x");
+            // convert addr to hex string
+            break;
+        }
+    }
+    terminal_print("  Memory: 16GB\n");
+    terminal_print("  OS: Custom Kernel\n");
+}
+
+
+
+
+void cmd_nicinfo(const char* input) {
+    print_nic_info();
+}
+

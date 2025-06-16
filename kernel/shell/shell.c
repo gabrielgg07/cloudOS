@@ -53,6 +53,8 @@ command_entry_t command_table[] = {
     {"clear", cmd_clear},
     {"echo", cmd_echo},
     {"user", enter_user_mode},
+    {"sysinfo", cmd_sysinfo},
+    {"nicinfo", cmd_nicinfo},
     {NULL, NULL}
 };
 
