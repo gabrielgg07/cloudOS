@@ -55,6 +55,9 @@ command_entry_t command_table[] = {
     {"user", enter_user_mode},
     {"sysinfo", cmd_sysinfo},
     {"nicinfo", cmd_nicinfo},
+    {"diskinfo", cmd_diskinfo},
+    {"diskwrite", cmd_diskwrite},
+    {"diskread", cmd_diskread},
     {NULL, NULL}
 };
 

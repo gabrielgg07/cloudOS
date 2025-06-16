@@ -3,6 +3,7 @@
 #include "../network/nic.h"
 #include "../include/gdt.h"
 #include "../network/nic.h"
+#include "../include/disk.h"
 void enter_user_mode() {
     const char* msg = "Hello from user mode!\n";
     uint32_t user_stack = 0x800000;
@@ -111,3 +112,25 @@ void cmd_nicinfo(const char* input) {
     print_nic_info();
 }
 
+void cmd_diskinfo(const char* input) {
+    ata_identify();
+}
+
+void cmd_diskwrite(const char* input) {
+    uint8_t buf[512] = {0};
+    const char* msg = "Hello from CloudOS!";
+    for (int i = 0; msg[i]; i++) {
+        buf[i] = (uint8_t)msg[i];
+    }
+
+    ata_write_sector(1, buf);  // Write to LBA 1
+    terminal_print("Data written to disk.\n");
+}
+
+void cmd_diskread(const char* input) {
+    uint8_t buf[513] = {0}; // Extra byte for null terminator
+    ata_read_sector(1, buf);
+    terminal_print("Read from disk:\n  ");
+    terminal_print((char*)buf);
+    terminal_print("\n");
+}
