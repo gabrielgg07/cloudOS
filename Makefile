@@ -15,7 +15,11 @@ ISO        := build/os.iso
 GRUB_CFG   := boot/grub.cfg
 
 # === Source Files ===
-C_SRC_DIRS := kernel kernel/drivers kernel/fs kernel/memory kernel/drivers/keyboard kernel/drivers/disk kernel/include kernel/arch/x86 kernel/lib kernel/include/lib kernel/shell kernel/syscall kernel/network
+C_SRC_DIRS := kernel kernel/drivers kernel/task \
+ kernel/timer kernel/task kernel/fs kernel/memory \
+  kernel/drivers/keyboard kernel/drivers/disk kernel/include \
+  kernel/arch/x86 kernel/lib kernel/include/lib kernel/shell \
+  kernel/syscall kernel/network
 C_SOURCES  := $(foreach dir,$(C_SRC_DIRS),$(wildcard $(dir)/*.c))
 ASM_SOURCES := $(wildcard $(foreach dir,$(C_SRC_DIRS),$(dir)/*.s))
 OBJ_FILES  := $(patsubst %.c, build/%.o, $(notdir $(C_SOURCES))) \

@@ -1,6 +1,7 @@
 [bits 32]
 [extern irq_handler]
 [extern isr80_handler]
+[extern pit_irq_handler]
 
 %macro IRQ_STUB 1
   global irq_stub_%1
@@ -44,6 +45,16 @@ isr80_stub:
     pop es
     pop ds
     popa
+    iret
+
+global pit_handler_stub
+pit_handler_stub:
+    cli
+    push byte 0         ; dummy error code for compatibility
+    push byte 32        ; IRQ number
+    call pit_irq_handler
+    add esp, 8          ; clean up pushed values
+    sti
     iret
 
 

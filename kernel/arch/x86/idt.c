@@ -4,6 +4,7 @@
 #include "../../include/pic.h"
 #include "../../include/keyboard.h"
 #include "../../syscall/syscall.h"
+#include "../../timer/pit.h"
 
 extern void isr_stub_0();
 extern void isr_stub_1();
@@ -54,6 +55,8 @@ extern void irq_stub_12();
 extern void irq_stub_13();
 extern void irq_stub_14();
 extern void irq_stub_15();
+
+extern void pit_handler_stub();
 
 extern void isr80_stub();
 
@@ -158,7 +161,7 @@ void idt_init() {
     set_idt_gate(30, (uint32_t)isr_stub_30, 0x08, 0x8E);
     set_idt_gate(31, (uint32_t)isr_stub_31, 0x08, 0x8E);
 
-    set_idt_gate(32, (uint32_t)irq_stub_0, 0x08, 0x8E);
+    set_idt_gate(32, (uint32_t)pit_handler_stub, 0x08, 0x8E);
     set_idt_gate(33, (uint32_t)irq_stub_1, 0x08, 0x8E);
     set_idt_gate(34, (uint32_t)irq_stub_2, 0x08, 0x8E);
     set_idt_gate(35, (uint32_t)irq_stub_3, 0x08, 0x8E);
@@ -180,6 +183,7 @@ void idt_init() {
     set_idt_gate(0x80, (uint32_t)isr80_stub, 0x08, 0xEE);  // syscall handler
     outb(0x21, 0xFD); // Master PIC: Unmask IRQ1 (bit 1) and IRQ2 (bit 2, needed for Slave PIC)
     outb(0xA1, 0xEF); // Slave PIC: Unmask IRQ12 (bit 4)
+    outb(0x21, 0xFE);  // 11111110 — enable only IRQ0 (for testing)
     // Load the IDT into the CPU
     
     idt_load((uint32_t)&idtp);
