@@ -5,41 +5,40 @@
 #include "../include/gdt.h"
 
 void enter_user_mode() {
-    uint32_t user_stack = 0x800000;  // 8 MB, make sure it's unused
-    asm volatile (
-        "cli\n"                          // Disable interrupts
+    const char* msg = "Hello from user mode!\n";
+    uint32_t user_stack = 0x800000;
 
-        // Set user data segments (0x23 = user DS | RPL 3)
+    asm volatile (
+        "cli\n"
         "mov $0x23, %%ax\n"
         "mov %%ax, %%ds\n"
         "mov %%ax, %%es\n"
         "mov %%ax, %%fs\n"
         "mov %%ax, %%gs\n"
 
-        // Push user-mode stack
-        "pushl $0x23\n"                 // SS = user data segment
-        "pushl %[stack]\n"             // ESP = user stack
+        "pushl $0x23\n"
+        "pushl %[stack]\n"
+        "pushf\n"
+        "pushl $0x1B\n"
+        "pushl $1f\n"
+        "iret\n"
 
-        "pushf\n"                       // Push EFLAGS
-
-        "pushl $0x1B\n"                 // CS = user code segment
-        "pushl $1f\n"                   // EIP = label 1
-
-        "iret\n"                        // Far return into user mode
-
-         // === USER MODE STARTS HERE ===
         "1:\n"
         "mov $1, %%eax\n"
+        "mov %[msg], %%ebx\n"
+        "int $0x80\n"
+
+        "mov $1, %%eax\n"
+        "mov %[msg], %%ebx\n"
         "int $0x80\n"
 
         "2:\n"
         "jmp 2b\n"
         :
-        : [stack] "r" (user_stack)
-        : "memory", "eax"
+        : [stack] "r"(user_stack), [msg] "r"(msg)
+        : "memory", "eax", "ebx"
     );
 }
-
 
 void cmd_help(const char* input) {
     terminal_print("Available commands:\n");

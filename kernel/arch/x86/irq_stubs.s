@@ -24,8 +24,26 @@ irq_stub_%1:
 
 global isr80_stub
 isr80_stub:
-    push byte 0          ; Fake error code
-    push dword 0x80      ; Interrupt number
-    jmp isr80_handler  ; Forward to your shared C handler
+    cli
+    pusha                ; save general purpose registers
+    push ds
+    push es
+    push fs
+    push gs
+
+    mov ax, 0x10         ; kernel data segment
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    call isr80_handler
+
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    popa
+    iret
 
 

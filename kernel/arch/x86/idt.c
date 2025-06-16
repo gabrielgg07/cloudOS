@@ -3,6 +3,7 @@
 #include "../../include/port.h"
 #include "../../include/pic.h"
 #include "../../include/keyboard.h"
+#include "../../syscall/syscall.h"
 
 extern void isr_stub_0();
 extern void isr_stub_1();
@@ -102,16 +103,18 @@ void init_keyboard() {
 }
 
 void isr80_handler() {
-    terminal_print("Syscall print!\n");
-    asm volatile ("hlt");  // Call the syscall handler
-    // Get syscall number from eax
-    uint32_t syscall_id;
-    asm volatile ("mov %%eax, %0" : "=r"(syscall_id));
+    uint32_t id, arg1, arg2;
 
-    if (syscall_id == 1) {
-        terminal_print("Syscall print!\n");
-    }
-    outb(0x20, 0x20);  // EOI
+    asm volatile (
+        "mov %%eax, %0\n"
+        "mov %%ebx, %1\n"
+        "mov %%ecx, %2\n"
+        : "=r"(id), "=r"(arg1), "=r"(arg2)
+        :
+        : "memory"
+    );
+
+    syscall_dispatcher(id, arg1, arg2);
 }
 
 
