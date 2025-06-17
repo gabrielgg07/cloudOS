@@ -1,0 +1,70 @@
+
+#include <stdint.h>
+#include "../include/port.h"
+#include "./paging.h" // For paging
+
+#define PAGE_PRESENT 0x1
+#define PAGE_WRITE   0x2
+#define PAGE_SIZE    4096
+
+static uint32_t* page_directory = (uint32_t*)0x1000;
+static uint32_t* page_tables[1024] = { 0 };  // One page table per 4MB
+static uint32_t page_table_alloc_base = 0x2000;  // Start allocating page tables here
+
+void page_fault_handler(uint32_t error_code, uint32_t eip) {
+    terminal_print("Page fault occurred!\n");
+    uint32_t cr2;
+    asm volatile("mov %%cr2, %0" : "=r"(cr2));
+    
+    while (1);
+}
+
+void map_page(uint32_t virt_addr, uint32_t phys_addr) {
+    uint32_t pd_index = virt_addr >> 22;
+    uint32_t pt_index = (virt_addr >> 12) & 0x3FF;
+
+    if (!page_tables[pd_index]) {
+        uint32_t* new_table = (uint32_t*)page_table_alloc_base;
+        page_table_alloc_base += PAGE_SIZE;
+
+        for (int i = 0; i < 1024; i++) {
+            new_table[i] = 0;
+        }
+
+        page_tables[pd_index] = new_table;
+        page_directory[pd_index] = ((uint32_t)new_table) | PAGE_PRESENT | PAGE_WRITE;
+    }
+
+    page_tables[pd_index][pt_index] = (phys_addr & 0xFFFFF000) | PAGE_PRESENT | PAGE_WRITE;
+}
+
+void paging_init() {
+    // Clear page directory entries
+    for (int i = 0; i < 1024; i++) {
+        page_directory[i] = 0x00000002;  // Supervisor, RW, not present
+    }
+
+    // Map the page directory itself
+    map_page((uint32_t)page_directory, (uint32_t)page_directory);
+
+    // Align ESP to page and map a full page *below* it too
+
+
+
+
+    for (uint32_t i = 0; i < 0x400000; i += PAGE_SIZE) {
+        map_page(i, i);
+    }
+
+    // Ensure VGA memory is mapped (if not included above)
+    map_page(0xB8000, 0xB8000);
+    terminal_print("here");
+    // Load page directory into CR3
+    asm volatile("mov %0, %%cr3" :: "r"(page_directory));
+
+    // Enable paging by setting PG bit in CR0
+    uint32_t cr0;
+    asm volatile("mov %%cr0, %0" : "=r"(cr0));
+    cr0 |= 0x80000000;
+    asm volatile("mov %0, %%cr0" :: "r"(cr0));
+}

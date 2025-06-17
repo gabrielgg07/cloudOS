@@ -7,33 +7,39 @@
 #include "./include/shell.h"
 #include "./task/task.h"
 
-void helloE(){
-    int a = 0;
-    int b = 0;
+void helloE() {
     while (1) {
-        if (a == 1000000000) {
-            if (b == 1000000000) {
-                terminal_print("Hello from task E!\n");
-                int b = 0;
+        for (volatile int i = 0; i < 100000000; i++){
+            for (volatile int a = 0; a < 1; a++){
+           
             }
-            b++;
-            a = 0;
         }
-        a++;
+        terminal_print("Hello from task E!\n");
     }
 }
 
+
 void kernel_main() {
+    extern uint32_t kernel_start;
+    extern uint32_t kernel_end;
+    terminal_printf("Kernel loaded at 0x%x–0x%x\n", &kernel_start, &kernel_end);
     terminal_initialize();
+
+    create_task(run_shell);
+    create_task(helloE);
     arch_init();
 
     terminal_print("Welcome to cloudOS!\n");
     int i = 0;
     while(i < 1000000000) i++; // Simple delay
-    create_task(run_shell);
-    create_task(helloE);
     terminal_clear();
-    run_shell();
+    //helloE();
+    terminal_print("before int");
+    asm volatile("int $14"); // Enable interrupts
+    terminal_print("after int");
+    while (1) {
+        //un_shell();
+    }
     // This point should never be reached
 }
 

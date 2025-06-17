@@ -15,5 +15,5 @@ void arch_init() {
     paging_init();
     fat16_init();
     tasking_init();
-    pit_init(100);  // 100Hz = 10ms slice
+    //pit_init(1);  // 1Hz = 1000ms slice
 }

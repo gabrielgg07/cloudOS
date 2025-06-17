@@ -20,7 +20,7 @@ extern void isr_stub_10();
 extern void isr_stub_11();
 extern void isr_stub_12();
 extern void isr_stub_13();
-extern void isr_stub_14();
+extern void isr_stub_14S();
 extern void isr_stub_15();
 extern void isr_stub_16();
 extern void isr_stub_17();  
@@ -142,7 +142,7 @@ void idt_init() {
     set_idt_gate(11, (uint32_t)isr_stub_11, 0x08, 0x8E);
     set_idt_gate(12, (uint32_t)isr_stub_12, 0x08, 0x8E);
     set_idt_gate(13, (uint32_t)isr_stub_13, 0x08, 0x8E);
-    set_idt_gate(14, (uint32_t)isr_stub_14, 0x08, 0x8E);
+    set_idt_gate(14, (uint32_t)isr_stub_14S, 0x08, 0x8E);
     set_idt_gate(15, (uint32_t)isr_stub_15, 0x08, 0x8E);
     set_idt_gate(16, (uint32_t)isr_stub_16, 0x08, 0x8E);
     set_idt_gate(17, (uint32_t)isr_stub_17, 0x08, 0x8E);
@@ -183,7 +183,7 @@ void idt_init() {
     set_idt_gate(0x80, (uint32_t)isr80_stub, 0x08, 0xEE);  // syscall handler
     outb(0x21, 0xFD); // Master PIC: Unmask IRQ1 (bit 1) and IRQ2 (bit 2, needed for Slave PIC)
     outb(0xA1, 0xEF); // Slave PIC: Unmask IRQ12 (bit 4)
-    outb(0x21, 0xFE);  // 11111110 — enable only IRQ0 (for testing)
+    outb(0x21, 0xFC);  // 11111110 — enable only IRQ0 (for testing)
     // Load the IDT into the CPU
     
     idt_load((uint32_t)&idtp);

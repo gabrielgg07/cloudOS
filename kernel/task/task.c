@@ -2,6 +2,7 @@
 #include "task.h"
 
 #include "../include/terminal.h"
+#include "../memory/paging.h"
 
 #define MAX_TASKS 10
 #define STACK_SIZE 4096
@@ -18,45 +19,44 @@ uint8_t task_stacks[MAX_TASKS][STACK_SIZE];
 extern void switch_to_task(task_t* next);
 
 
-void create_task(void (*func)()) {
-    if (task_count >= MAX_TASKS) {
-        terminal_print("Max task count reached.\n");
-        return;
-    }
+void create_task(void (*entry)()) {
+    if (task_count >= MAX_TASKS) return;
 
     task_t* t = &tasks[task_count];
+    uint32_t* stack = (uint32_t*)&task_stacks[task_count][STACK_SIZE];
 
-    // Setup stack pointer to end of stack
-    uint32_t stack_top = (uint32_t)&task_stacks[task_count][STACK_SIZE];
+    terminal_printf("Creating task %d at EIP=0x%x\n", task_count, (uint32_t)entry);
+    for (uint32_t i = 0; i < STACK_SIZE; i += 0x1000) {
+        //map_page((uint32_t)&task_stacks[task_count][i], (uint32_t)&task_stacks[task_count][i]);
+    }
 
-    // Fake stack: push return address (EIP)
-    stack_top -= sizeof(uint32_t);
-    *(uint32_t*)stack_top = (uint32_t)func;
+    // Build an interrupt-like stack
+    *(--stack) = 0x202;                 // EFLAGS (IF = 1)
+    *(--stack) = 0x08;                  // CS (kernel code segment)
+    *(--stack) = (uint32_t)entry;       // EIP (start at this function)
 
-    // Setup task
+    // Dummy pusha values (edi, esi, ebp, esp_dummy, ebx, edx, ecx, eax)
+    for (int i = 0; i < 8; i++) *(--stack) = 0;
+
     t->id = task_count;
-    t->esp = stack_top;
-    t->ebp = stack_top;
-    t->next = 0;
+    t->esp = (uint32_t)stack;
+    t->ebp = 0;  // optional
+    t->eip = (uint32_t)entry;  // optional
+    t->next = current_task;  // make it circular
 
-    // Add to circular list
     if (task_count > 0) {
         tasks[task_count - 1].next = t;
-    }
-
-    task_count++;
-    if (task_count == 1) {
+    } else {
         current_task = t;
     }
-
-    terminal_printf("Created task %d at 0x%x\n", t->id, func);
+    task_count++;
 }
 
 void tasking_init() {
     terminal_print("Tasking initialized.\n");
 }
 
-void switch_task() {
+void schedule() {
     if (!current_task || !current_task->next) return;
     current_task = current_task->next;
     switch_to_task(current_task);

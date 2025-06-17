@@ -4,6 +4,8 @@ SECTIONS
 {
   . = 1M;
 
+  kernel_start = .;  
+  
   .multiboot :
   {
     *(.multiboot)
@@ -30,4 +32,6 @@ SECTIONS
     . = . + 0x4000;  /* 16 KB stack */
     stack_top = .;
   }
+
+  kernel_end = .;  /* Add this at the end */
 }

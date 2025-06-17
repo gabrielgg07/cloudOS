@@ -1,9 +1,11 @@
 #include "pit.h"
 #include "../include/port.h"  // for outb()
 #include "../include/terminal.h"  // optional, for debug
+#include "../task/task.h"  // for task_switch()
 
 void pit_irq_handler() {
-    terminal_print("PIT interrupt occurred.\n");
+    schedule();  // Preempt current task and switch to the next one
+    //terminal_print("PIT IRQ Handler called.\n");
     outb(0x20, 0x20);  // Send EOI to PIC
 }
 

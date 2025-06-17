@@ -9,6 +9,14 @@
 static uint32_t* page_directory = (uint32_t*)0x1000;  // Just an example spot in free memory
 static uint32_t* first_page_table = (uint32_t*)0x2000;
 
+void page_fault_handler(uint32_t error_code, uint32_t eip) {
+    terminal_print("Page fault occurred!\n");
+    uint32_t cr2;
+    asm volatile("mov %%cr2, %0" : "=r"(cr2));
+    
+    while (1);
+}
+
 void paging_init() {
     // Zero them
     for (int i = 0; i < 1024; i++) {
@@ -18,6 +26,8 @@ void paging_init() {
 
     // Map 0x00000000–0x003FFFFF using this page table
     page_directory[0] = ((uint32_t)first_page_table) | PAGE_PRESENT | PAGE_WRITE;
+
+    
 
     // Map 0xB8000 manually (just in case)
     first_page_table[0xB8000 / PAGE_SIZE] = 0xB8000 | PAGE_PRESENT | PAGE_WRITE;

@@ -11,4 +11,4 @@ typedef struct task {
 
 void tasking_init();
 void create_task(void (*func)());
-void switch_task();
+void schedule();

@@ -48,13 +48,28 @@ isr80_stub:
     iret
 
 global pit_handler_stub
+
 pit_handler_stub:
     cli
-    push byte 0         ; dummy error code for compatibility
-    push byte 32        ; IRQ number
+    pusha                ; save general purpose registers
+    push ds
+    push es
+    push fs
+    push gs
+
+    mov ax, 0x10         ; kernel data segment
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
     call pit_irq_handler
-    add esp, 8          ; clean up pushed values
-    sti
+
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    popa
     iret
 
 

@@ -5,6 +5,9 @@
         "util.h": "c",
         "fat.h": "c",
         "terminal.h": "c",
-        "disk.h": "c"
+        "disk.h": "c",
+        "paging.h": "c",
+        "stdint.h": "c",
+        "port.h": "c"
     }
 }
